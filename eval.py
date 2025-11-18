@@ -180,6 +180,104 @@ def eval_length(args, config, model, ctx):
         plt.savefig(fig_path, dpi=200, bbox_inches='tight')
         print(f"[length] plot saved: {fig_path}")
 
+def eval_length_10(args, config, model, ctx):
+    opts = resolve_eval_options(args, config)
+    operator = opts["operator"]
+    digit_max = opts["digit_max"]
+    data_format = opts["data_format"]
+    tokenizer = opts["tokenizer"]
+    vocabulary = opts["vocabulary"]
+    result_dir = get_results_dir(config)
+
+    if digit_max < 1:
+        print("[length] digit_max < 1, nothing to do")
+        return
+
+    digits = [1] + list(range(10, digit_max + 1, 10))
+    digits = sorted(set(digits))
+
+    acc = {}
+    for d in digits:
+        if operator in ['+', '*']:
+            test_path = (
+                "data/val/addition/finaltest/"
+                "multi_digit_test_samelength_10/"
+                f"add_samedigit_min{d}_max{d}_limit500_test.txt"
+            )
+            if data_format == 'algo_reasoning':
+                test_path = (
+                    "data/val/addition/finaltest/"
+                    "multi_digit_test_samelength/verysmall/"
+                    f"add_diffdigit_{d}and{d}_limit100.txt"
+                )
+        elif operator == "multiply_nm":
+            test_path = f"data/newtask/eval/multiply/multiply_{d}.txt"
+        elif operator in ["parity", "binarysum", "copy", "reverse", "oneDigitSort", "hex"]:
+            if operator == "hex":
+                test_path = f"data/newtask/eval/hexadecimal/hexadecimal_{d}.txt"
+            else:
+                test_path = f"data/newtask/eval/{operator}/{operator}_{d}.txt"
+        else:
+            raise ValueError(f"Unsupported operator for length mode: {operator}")
+
+        if not os.path.exists(test_path):
+            print(f"[length] missing file, skip: {test_path}")
+            acc[d] = math.nan
+            continue
+
+        encode, decode, _, _ = build_codec_from_testfile(vocabulary, tokenizer, test_path)
+        cfg = dict(config)
+        cfg['start'] = f"FILE:{test_path}"
+        num_digit = d + 3  
+
+        try:
+            digit_accuracy = evaluate_addition_batch(
+                cfg, model, ctx, encode, decode, verbose=True, num_digit=num_digit,
+                zero_pad=opts["zero_pad"], reverse_b=opts["reverse_b"], reverse_c=opts["reverse_c"],
+                algo_reason=opts["algo_reason"], operator=operator, data_format=data_format,
+                index_hint=opts["index_hint"], zeropad_max_length=opts["zeropad_max_length"],
+                blank_space_in_equation_number=opts["blank_space_in_equation_number"],
+                pad_answer=opts["pad_answer"], fix_blank_space_position=opts["fix_blank_space_position"],
+                blank_space_exact=opts["blank_space_exact"],
+                operand_number_exact=opts["operand_number_exact_multiadd"],
+                pad_before=opts["pad_before"], hard_mode=opts["hard_mode"]
+            )
+        except Exception as e:
+            print(f"[length] error at digit {d}: {e}")
+            digit_accuracy = math.nan
+
+        acc[d] = digit_accuracy
+
+    # 只把这些 digit 写进 CSV
+    csv_path = os.path.join(result_dir, "digit_accuracy_results.csv")
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["digit", "accuracy"])
+        for d in digits:
+            w.writerow([d, acc.get(d, math.nan)])
+    print(f"[length] CSV saved: {csv_path}")
+
+    # 画图也只画这些点
+    if args.plot and plt is not None:
+        xs = digits
+        ys = [acc.get(d, math.nan) for d in xs]
+
+        xs_arr = np.array(xs, dtype=float)
+        ys_arr = np.array(ys, dtype=float)
+        valid = ~np.isnan(ys_arr)
+
+        plt.figure(figsize=(6, 4))
+        if np.any(valid):
+            plt.plot(xs_arr[valid], ys_arr[valid], marker='o')
+        plt.xlabel("Digit")
+        plt.ylabel("Accuracy")
+        plt.title("Accuracy vs Digit Length (step=10, first=1)")
+        plt.ylim(0, 100)
+        plt.grid(True)
+        plt.xticks(xs)  # 横坐标就是 1,10,20,...
+        fig_path = os.path.join(result_dir, "digit_accuracy_plot.png")
+        plt.savefig(fig_path, dpi=200, bbox_inches='tight')
+        print(f"[length] plot saved: {fig_path}")
 
 def eval_grid(args, config, model, ctx):
     opts = resolve_eval_options(args, config)
@@ -345,7 +443,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--out_dir', type=str, default='out')
     p.add_argument('--ckpt', type=str, default='ckpt.pt')
-    p.add_argument('--mode', type=str, choices=['length','grid','heatmap','final'], required=True)
+    p.add_argument('--mode', type=str, choices=['length','grid','heatmap','final', 'length_10'], required=True)
     p.add_argument('--operator', type=str, default=None)
     p.add_argument('--digit_test_number', type=int, default=None)
     p.add_argument('--final_file', type=str, default=None)
@@ -368,6 +466,8 @@ def main():
 
     if args.mode == 'length':
         eval_length(args, config, model, ctx)
+    if args.mode == 'length_10':
+        eval_length_10(args, config, model, ctx)
     elif args.mode == 'grid':
         eval_grid(args, config, model, ctx)
     elif args.mode == 'heatmap':

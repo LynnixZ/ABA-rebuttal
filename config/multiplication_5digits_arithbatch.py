@@ -1,0 +1,70 @@
+# Model and Training Configuration
+out_dir = f'out/monet/masking/6layer1mixing1poly/'  # Dynamic output directory based on layers and mixings
+eval_interval = 1000  # As specified
+eval_iters = 10
+log_interval = 100
+digit_test_number=10
+arithmetic_batch=True
+
+always_save_checkpoint = False
+wandb_log = False  # Disable wandb logging per command line
+wandb_project = 'addition'
+wandb_run_name = 'addition_reverse'
+
+data_type = 'text'
+data_format = 'reverse'
+operator = '*'
+dataset = 'bal'
+batch_size = 256  # Adjusted as per command
+block_size = 512
+train_data_path = '+_maxLen_5_limit_1000000_train_minReq_0.txt'
+start = 'FILE:data/bal/+_maxLen_10_limit_500_test_minReq_5.txt'
+start_train="FILE:data/bal/+_maxLen_5_limit_500_test_minReq_0.txt" #不知道为什么无法在command line改
+ckpt_path_name = f'monet_6layer1mixing1poly_5000iter.pt'  # Checkpoint name as per layers and mixings
+reverse_c = True
+eval_addition = True
+eval_addition_train = True
+num_digit=20
+
+# Model architecture settings
+n_layer = 7  # Layer count as per command line
+n_embd = 724  # Updated embedding size
+dropout = 0.2
+learning_rate = 0.0001  # Updated learning rate
+gradient_accumulation_steps = 16  # Added as per command line
+
+max_iters = 5000
+lr_decay_iters = 5000
+beta2 = 0.99
+
+warmup_iters = 100
+device = 'cuda'  # As specified
+
+# Mixing and positional configurations
+mixing_number = 1
+poly_number = 1
+max_mixing_length = 32
+position_embedding = 'none'
+norm_in_mixing_layer = 'Layernorm'
+norm_in_polyblock = 'none'
+norm_before_output = 'none'
+
+# Training settings for reverse and padding
+reverse_ab = True
+index_hint = False
+zero_pad_in_target = False
+zero_pad_in_training = False
+max_number_length = 0
+noorder = False
+blank_space_in_equation_number = 25  # Placeholder; ensure `blank_space` is defined
+pad_answer = True  # Placeholder; ensure `pad_answer` is defined
+fix_blank_space_position = True
+blank_space_exact=False
+blank_space_split_number=True
+evaluation = True
+
+proxy_number= 0
+monet_modeltype="poly+mix"
+model_type = 'Monet' 
+polyMLP_insteadof_projection=False
+mixinglayer_in_the_beggining=3

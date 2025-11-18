@@ -1,15 +1,11 @@
 import os
-import torch
 import numpy as np
-from tqdm import tqdm
 import random
 import math
 import string
 import pickle
 import copy
 import pandas as pd
-import tiktoken
-from model.model import GPTConfig, GPT
 
 def remove_zero_pad(s: str, reverse=True):
     # drop trailing (or leading if reverse=False) zeros/spaces, keep at least "0"
@@ -283,10 +279,10 @@ def generate_fixed_space_positions(length, total_length):
 
 def insert_fixedspaces_at_numberlist(numlist,total_length):
     # Generate fixed space positions
-    space_positions = generate_fixed_space_positions(len(numlist[0]), total_length)
+    digits_positions = generate_fixed_space_positions(len(numlist[0]), total_length)
     spaced_numlist = []
     for num in numlist:
-        num_spaced = insert_spaces_at_positions(num, space_positions, total_length)
+        num_spaced = insert_spaces_at_positions(num, digits_positions, total_length)
         spaced_numlist.append(num_spaced)
     return spaced_numlist
 
@@ -620,7 +616,7 @@ def generate_data_str(
             operands_processed = []
             for letter, val_spaced in zip(a_list, x_list_test):
                 operands_processed.append(f"{letter}:{val_spaced}")
-            test_left_side = ",".join(operands_processed)
+            test_left_side = ",".join(oerands_processed)
 
             if train:
                 output_str = f"${train_left_side}={y_str}$\n"
@@ -702,6 +698,7 @@ def generate_data_str(
             y_list.append(y_true)
     
     return data_str, prompt_list, y_list
+
 ###NOT FIXED YET
 def generate_scratchpad(operand1, operand2, spaces1, spaces2,reverse=True,train=True,blank_space_exact=True,simple=True):
     op1_str = str(operand1)
@@ -711,26 +708,23 @@ def generate_scratchpad(operand1, operand2, spaces1, spaces2,reverse=True,train=
     op1_str = op1_str.zfill(zero_pad_length)
     blankspaces1 = spaces1 - zero_pad_length
 
-                        
     if not train and not blank_space_exact:
         blankspaces1 = 0
     elif not blank_space_exact:
-        blankspaces1 = random.randint(0, blankspaces1)
-
+        blankspaces1 = random.randint(0, blankspaces1) #blankspaces1 will be the number of blankspaces inserted in the numbers 
+    total_length_op1 = len(op1_str) + blankspaces1
     if train:
-        pos1 = generate_fixed_space_positions(len(op1_str), blankspaces1)
-        spaced_op1 = insert_spaces_at_positions(op1_str, pos1)
+        pos1 = generate_fixed_space_positions(zero_pad_length, total_length_op1)
+        spaced_op1 = insert_spaces_at_positions(op1_str, pos1, total_length_op1)
     else:
-        spaced_op1= " "*blankspaces1+op1_str
-    
-                         
+        spaced_op1= " "*blankspaces1+op1_str  
 
     if not train:
         blankspaces2 = 0
     else:
         blankspaces2 = random.randint(0, spaces2 - len(op2_str))
-    pos2 = generate_fixed_space_positions(len(op2_str), blankspaces2)
-    spaced_op2 = insert_spaces_at_positions(op2_str, pos2)
+    pos2 = generate_fixed_space_positions(len(op2_str), blankspaces2+ len(op2_str))
+    spaced_op2 = insert_spaces_at_positions(op2_str, pos2,blankspaces2+ len(op2_str))
 
            
     if reverse:
@@ -739,11 +733,10 @@ def generate_scratchpad(operand1, operand2, spaces1, spaces2,reverse=True,train=
     header = f"${spaced_op2}*{spaced_op1}:\n"
     if not train:
         return header
-    
-                                            
+                           
     def format_with_spaces(val):
         s = str(val).zfill(zero_pad_length)
-        s_spaced = insert_spaces_at_positions(s, pos1)
+        s_spaced = insert_spaces_at_positions(s, pos1, total_length_op1)
         if reverse:
             s_spaced = s_spaced[::-1]
         return s_spaced
@@ -784,7 +777,6 @@ def generate_scratchpad(operand1, operand2, spaces1, spaces2,reverse=True,train=
         multiplication_lines = []
         cumulative = 0            
         digit_index = -1                
-
                               
         for ch in spaced_op2:
             if ch.strip():
@@ -792,12 +784,12 @@ def generate_scratchpad(operand1, operand2, spaces1, spaces2,reverse=True,train=
                 current_digit = int(ch)
                 prod = int(op1_str) * current_digit
                 prod_str = str(prod).zfill(zero_pad_length)
-                spaced_prod = insert_spaces_at_positions(prod_str, pos1)
+                spaced_prod = insert_spaces_at_positions(prod_str, pos1, total_length_op1)
                 if reverse:
                     spaced_prod = spaced_prod[::-1]
                 shifted_value = prod * (10 ** digit_index)
                 shifted_str = str(shifted_value).zfill(zero_pad_length)
-                shifted_prod = insert_spaces_at_positions(shifted_str, pos1)
+                shifted_prod = insert_spaces_at_positions(shifted_str, pos1, total_length_op1)
                 if reverse:
                     shifted_prod = shifted_prod[::-1]
                 prev_cum_formatted = format_with_spaces(cumulative)
@@ -811,6 +803,7 @@ def generate_scratchpad(operand1, operand2, spaces1, spaces2,reverse=True,train=
                                                 
                 line = f" *{spaced_op1}={blank_field}>{blank_field}+{prev_cum_formatted}={prev_cum_formatted},"
             multiplication_lines.append(line)
+
         scratchpad = header + "\n".join(multiplication_lines )
         if scratchpad[-1] == ",":
             scratchpad = scratchpad[:-1] + "$"

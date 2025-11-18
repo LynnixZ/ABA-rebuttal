@@ -58,19 +58,12 @@ def evaluate_addition_batch(config, model, ctx, encode, decode, verbose=False, n
     max_new_tokens = config['max_new_tokens'] if 'max_new_tokens' in config.keys() else num_digit+5
     if operator == '*': 
         max_new_tokens = num_digit*2+5
-    simple= config['simple'] if 'simple' in config.keys() else False
+    simple= config['scratchpad_simple'] if 'scratchpad_simple' in config.keys() else False
 
     if blank_space_exact and blank_space_in_equation_number is not None and blank_space_in_equation_number>0: 
         max_new_tokens = blank_space_in_equation_number+5
     elif index_hint:
         max_new_tokens = 2 * num_digit + 5 
-
-    temperature = config['temperature'] if 'temperature' in config.keys() else 0.8
-    top_k = config['top_k'] if 'top_k' in config.keys() else None
-    eps = config['eps'] if 'eps' in config.keys() else 0
-    
-    random_A= config['random_A'] if 'random_A' in config.keys() else False
-    random_C= config['random_C'] if 'random_C' in config.keys() else False
 
     print(f'evaluating addition from: {start}')
     # print(f'max_new_tokens: {max_new_tokens}, temperature: {temperature}, top_k: {top_k}')
