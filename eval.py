@@ -193,7 +193,7 @@ def eval_length_10(args, config, model, ctx):
         print("[length] digit_max < 1, nothing to do")
         return
 
-    digits = [1] + list(range(10, digit_max + 1, 10))
+    digits = [1] + list(range(50, digit_max + 1, 50))
     digits = sorted(set(digits))
 
     acc = {}

@@ -21,4 +21,5 @@ python eval.py  \
         --dir "data/bal/" \       
         --test \
 
+    conda env create -f env.yaml
 conda activate NLP
