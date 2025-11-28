@@ -36,7 +36,7 @@ gradient_accumulation_steps = 8
 max_iters = 5000
 lr_decay_iters = 100000
 beta2 = 0.99
-
+drop_path_rate = 0.02
 warmup_iters = 2000
 device = 'cuda'  
 # Training settings for reverse and padding

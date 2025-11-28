@@ -184,9 +184,17 @@ if ddp:
 else:
     master_process = True
     seed_offset = 0
+    # 单卡模式时，根据 device 设定当前 CUDA 设备
+    if isinstance(device, str) and device.startswith('cuda'):
+        if ':' in device:
+            dev_index = int(device.split(':')[1])  # 例如 cuda:1 -> 1
+        else:
+            dev_index = 0                          # cuda -> 0
+        print(f"[DEBUG] set single-GPU to cuda:{dev_index}")
+        torch.cuda.set_device(dev_index)
 
-if master_process:
-    os.makedirs(out_dir, exist_ok=True)
+os.makedirs(out_dir, exist_ok=True)
+
 
 torch.manual_seed(seed + seed_offset)
 torch.backends.cuda.matmul.allow_tf32 = True
@@ -381,7 +389,7 @@ if wandb_log and master_process:
         print(f"W&B init failed: {e}")
         wandb_log = False
 
-# result dir and config dump
+# https://chatgpt.com/backend-api/estuary/content?id=file_0000000053a8723093d00331dae479fc&ts=489854&p=fs&cid=1&sig=e577c29dc1ff300977912cfce0c3faae7cd9f9a2948ff334d07db9b01ec7b267&v=0result dir and config dump
 result_dir = get_results_dir({k:globals()[k] for k in config_keys})
 if master_process:
     with open(os.path.join(result_dir, "config.yaml"), "w") as yaml_file:
@@ -416,7 +424,7 @@ while True:
     for g in optimizer.param_groups:
         g['lr'] = lr
 
-    if evaluation and iter_num >= 0 and iter_num % eval_interval == 0 and master_process:
+    if evaluation and iter_num >=1 and iter_num % eval_interval == 0 and master_process:
         losses = estimate_loss()
         ppl = None
         test_accuracy = None
