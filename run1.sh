@@ -1,3 +1,5 @@
+#!/bin/bash
+
 CUDA_VISIBLE_DEVICES=1
 # python eval.py    --out_dir out/addition_50_ABA/run2/run3   --ckpt out/addition_50_ABA/run2/addition_10_best_ood.pt   --mode length_10 --operator + --digit_test_number 450 --plot
 

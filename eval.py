@@ -122,6 +122,8 @@ def eval_length(args, config, model, ctx):
     for d in range(1, digit_max + 1):
         if operator in ['+','*']:
             test_path = f"data/val/addition/finaltest/multi_digit_test_samelength/medium/add_samedigit_min{d}_max{d}_limit500_test.txt"
+            if args.test_fullcarry and operator == '+':
+                test_path = f"data/carry/test/addition_fullcarry_mode-len2_uniform_n{d}_limit1000.txt"
             if data_format == 'algo_reasoning':
                 test_path = f"data/val/addition/finaltest/multi_digit_test_samelength/verysmall/add_diffdigit_{d}and{d}_limit100.txt"
         elif operator == "multiply_nm":
@@ -130,7 +132,9 @@ def eval_length(args, config, model, ctx):
             if operator == "hex":
                 test_path = f"data/newtask/eval/hexadecimal/hexadecimal_{d}.txt"
             else:
-                test_path = f"data/newtask/eval/{operator}/{operator}_{d}.txt"
+                test_path = f"data/newtask/eval/multi_add/test_add_5_{d}.txt"
+        elif operator == "multi_add":
+            test_path = f"data/newtask/eval/multi_add/force_carry_full/test_add_5_{d}.txt"
         else:
             raise ValueError(f"Unsupported operator for length mode: {operator}")
 
@@ -417,8 +421,10 @@ def eval_final_single(args, config, model, ctx):
 
     encode, decode, _, _ = build_codec_from_testfile(vocabulary, tokenizer, test_file)
     cfg = dict(config); cfg['start'] = f"FILE:{test_file}"
+    print(config)
 
     num_digit = args.num_digit or opts["digit_max"]
+
     acc = evaluate_addition_batch(
         cfg, model, ctx, encode, decode, verbose=True, num_digit=num_digit,
         zero_pad=opts["zero_pad"], reverse_b=opts["reverse_b"], reverse_c=opts["reverse_c"],
@@ -455,7 +461,7 @@ def main():
     p.add_argument('--zeropad_max_length', type=int, default=None)
     p.add_argument('--operand_number_exact_multiadd', action='store_true')
     p.add_argument('--pad_before', action='store_true')
-
+    p.add_argument('--test_fullcarry', action='store_true')
     args = p.parse_args()
 
     config, model, ctx = load_cfg_and_model(args.out_dir, args.ckpt)

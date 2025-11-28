@@ -155,7 +155,7 @@ def evaluate_addition_batch(config, model, ctx, encode, decode, verbose=False, n
                         generated_answer = extract_answer_from_scratchpad(c_hat)
                     else:
                         generated_answer = extract_answer_from_output(c_hat, index_hint=index_hint)
-                    if operator in ['multiply_nm', 'hex','+','tokenize']:
+                    if operator in ['multiply_nm', 'hex','+','*','tokenize','multi_add']:
                         if zero_pad:
                             generated_answer = remove_zero_pad(generated_answer,reverse_c)
                         if reverse_c:
