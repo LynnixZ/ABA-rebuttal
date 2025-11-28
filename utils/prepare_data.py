@@ -364,7 +364,7 @@ def generate_data_str(
     zero_pad=True, zeropad_max_length=None, 
     blank_space_in_equation_number=11,  fix_blank_space_position=False,
     blank_space_number_exact=True, 
-    max_operand_number=10, operand_number_exact=True, pad_before=False, hard_mode=''
+    max_operand_number=10, operand_number_exact=False, pad_before=False, hard_mode=''
 ):
     if shuffle:
         random.shuffle(data_list)
@@ -653,7 +653,7 @@ def generate_data_str(
             if reverse_c:
                 operands = [xx[::-1] for xx in operands]
                 y_str = y_str[::-1]
-            operands.append(y_str)
+            
 
             operands_test = []
             for xx in operands:
@@ -662,6 +662,7 @@ def generate_data_str(
                 else:
                     xx_test = xx
                 operands_test.append(xx_test)
+            operands.append(y_str)
             
             if blank_space_in_equation_number is not None and blank_space_in_equation_number > 0:
                 operands_processed, test_left_side = insert_spaces(operands, operands_test, blank_space_in_equation_number,

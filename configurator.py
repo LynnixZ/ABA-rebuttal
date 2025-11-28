@@ -29,12 +29,9 @@ for arg in sys.argv[1:]:
     else:
         # assume it's a --key=value argument
         assert arg.startswith('--')
-        if arg.startswith('--start'):
-            key = 'start'
-            val = arg[8:]
-        else:
-            key, val = arg.split('=')
-            key = key[2:]
+
+        key, val = arg.split('=')
+        key = key[2:]
         if key in globals():
             try:
                 # attempt to eval it it (e.g. if bool, number, or etc)
