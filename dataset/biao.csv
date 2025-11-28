@@ -1,0 +1,7 @@
+Feature,Traditional (DVFS/PID),"Early AI (Kang,Jaiswal)"," Advanced AI (Chen,Maity)",, )
+Timing,Reactive,Proactive (Prediction),Proactive (Prediction & Control),,
+Control Logic,Fixed Rules / PID,Traditional (PID/Rules),Learned (Reinforcement Learning),,
+Adaptation,Limited / Manual,Offline Training per Device,Online / Simulation-Based Learning,,
+Action Scope,Often Frequency Only,Often Frequency Only,Freq. Scaling + Task Scheduling,,
+Outcome,Prevents meltdown,Better spike prevention,"Smoother Temps, Sustained Perf.",,
+Runtime Overhead,Very Low,Low (Prediction),Low to Moderate (Prediction + RL),,
