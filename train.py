@@ -404,7 +404,7 @@ if 'gpt2' in init_from:
 result_dict = {
     'iter': [], 'train_loss': [], 'val_loss': [],
     'val_ppl': [], 'test_acc': [], 'train_acc': [],
-    'time': [], 'iter_time_ms': [], 'peak_gpu_mem_gb': []
+    'time': [], 'iter_time_ms': [], 'peak_gpu_mem_gb': [],'train_time': []
 }
 start_event = end_event = None
 if torch.cuda.is_available():
@@ -417,7 +417,8 @@ raw_model = model.module if ddp else model
 running_mfu = -1.0
 total_time = 0.0
 best_ood_acc = -1.0         # 对应 eval_addition 的 test_accuracy
-    
+train_time_total = 0.0
+   
 # main loop
 while True:
     lr = get_lr(iter_num) if decay_lr else learning_rate
@@ -477,8 +478,9 @@ while True:
         result_dict['test_acc'].append(test_accuracy if eval_addition else None)
         result_dict['train_acc'].append(train_accuracy if eval_addition_train else None)
         result_dict['time'].append(total_time)
-        result_dict['iter_time_ms'].append(None)
+        result_dict['iter_time_ms'].append(dt_train)
         result_dict['peak_gpu_mem_gb'].append(None)
+        result_dict['train_time'].append(train_time_total)
 
         # persist CSV only (no plots)
         pd.DataFrame(result_dict).to_csv(os.path.join(result_dir, 'result.csv'), index=False)
@@ -507,6 +509,8 @@ while True:
         torch.cuda.reset_peak_memory_stats()
         start_event.record()
 
+    t_train_start = time.time()
+
     model.train()
     for micro_step in range(gradient_accumulation_steps):
         X, Y = batcher.get_batch('train')
@@ -531,6 +535,10 @@ while True:
     dt = t1 - t0
     t0 = t1
     total_time += dt
+
+    t_train_end = time.time()
+    dt_train = t_train_end - t_train_start
+    train_time_total += dt_train
 
     if iter_num % log_interval == 0 and master_process:
         lossf = loss.item()
